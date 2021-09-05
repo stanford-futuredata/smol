@@ -1,0 +1,25 @@
+model-config:
+  model-single:
+    onnx-path: "/lfs/1/ddkang/vision-inf/data/models/imagenet/full/resnet18_torchvision.onnx"
+    engine-path: "/lfs/1/ddkang/vision-inf/data/models/imagenet/full/resnet18_torchvision.batch64.engine"
+    do-int8: True
+    batch-size: 64
+    input-dim: [224, 224]
+    data-loader: "opt-jpg"
+    data-path: "/lfs/1/ddkang/vision-inf/data/imagenet/161-jpeg-75/val/"
+
+experiment-type: "infer-only"
+
+experiment-config:
+  time-load: False
+  run-infer: True
+  write-out: False
+  exp-type: "all"
+  multiplier: 4
+
+criterion:
+  name: "none" # "max"
+  param: 0.
+
+infer-config:
+  do-memcpy: False

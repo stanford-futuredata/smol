@@ -1,0 +1,29 @@
+model-config:
+  model-single:
+    onnx-path: "/lfs/1/ddkang/vision-inf/data/models/noscope/{}/{}/{}/{}.onnx"
+    batch-size: 150
+    input-dim: [50, 50] # [224, 224]
+    data-loader: "opt" # "opt"
+    data-path: "/lfs/1/ddkang/vision-inf/data/noscope/{}/{}"
+
+crop:
+  xmin: 0
+  ymin: 540
+  xmax: 1750
+  ymax: 1080
+
+experiment-type: "full"
+
+# exp-type:
+#   decode-only
+#   decode-resize
+#   decode-resize-norm
+#   all
+experiment-config:
+  time-load: False
+  run-infer: True
+  write-out: True
+  exp-type: "all"
+
+infer-config:
+  do-memcpy: True

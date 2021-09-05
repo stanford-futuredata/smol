@@ -1,0 +1,21 @@
+criterion:
+  name: none
+  param: 0.5
+experiment-config:
+  exp-type: decode-resize-norm
+  multiplier: 4
+  run-infer: false
+  time-load: false
+  write-out: false
+experiment-type: full
+infer-config:
+  do-memcpy: true
+model-config:
+  model-single:
+    batch-size: 64
+    data-loader: naive
+    data-path: /lfs/1/ddkang/vision-inf/data/imagenet/full/val
+    input-dim:
+    - 224
+    - 224
+    onnx-path: /lfs/1/ddkang/vision-inf/data/models/animals-10/full/fullres_rn18_ft.onnx

@@ -1,0 +1,28 @@
+model-config:
+  model-single:
+    onnx-path: "/lfs/1/ddkang/vision-inf/data/models/{}/full/{}"
+    onnx-path-bs1: "/lfs/1/ddkang/vision-inf/data/models/{}/full/{}"
+    engine-path: "/lfs/1/ddkang/vision-inf/data/models/{}/full/{}"
+    do-int8: True
+    batch-size: 64
+    input-dim: [224, 224]
+    data-loader: "opt-jpg"
+    data-path: "/lfs/1/ddkang/vision-inf/data/{}/{}/val"
+
+# full
+# infer-only
+experiment-type: "full"
+
+experiment-config:
+  time-load: False
+  run-infer: True
+  write-out: True
+  exp-type: "all"
+  multiplier: 100
+
+criterion:
+  name: "none"
+  param: 0.5
+
+infer-config:
+  do-memcpy: True
