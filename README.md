@@ -1,5 +1,16 @@
-# InferenceServer
-Inference Server lets you specify the model graph and the preprocessing specification. It will attempt to maximize preprocessing throughput.
+# Smol
+
+Code release for [Jointly Optimizing Preprocessing and Inference for DNN-based Visual Analytics](http://vldb.org/pvldb/vol14/p87-kang.pdf). If you find this code useful, please cite us!
+
+```
+@article{kang2021jointly,
+  title={Jointly optimizing preprocessing and inference for DNN-based visual analytics},
+  author={Kang, Daniel and Mathur, Ankit and Veeramacheneni, Teja and Bailis, Peter and Zaharia, Matei},
+  journal={PVLDB},
+  year={2021}
+}
+```
+
 
 ## Setup 
 Start with a `g4dn.xlarge` AWS instance, using the following AMI: 
