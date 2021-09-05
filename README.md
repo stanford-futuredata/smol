@@ -221,5 +221,5 @@ The video config is similar.
 ### Execution
 Create a YAML configuration file by filling out the above fields (a sample configuration is included). Run:
 ```sh
-./benchmarkInferenceServer <path to config file>
+./runner <path to config file>
 ```
