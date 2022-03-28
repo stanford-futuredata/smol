@@ -10,7 +10,7 @@
 #include "inference_server.h"
 
 
-static void add_resize(nvinfer1::INetworkDefinition *network, const size_t kBatchSize) {
+static void add_resize(nvinfer1::INetworkDefinition *network, const int32_t kBatchSize) {
   using namespace nvinfer1;
   // FIXME: 141, 224
   nvinfer1::ITensor* old_input = network->getInput(0);
@@ -35,19 +35,19 @@ nvinfer1::ICudaEngine* OnnxInferenceServer::CreateCudaEngine(
   using namespace std;
   using namespace nvinfer1;
   using nvonnxparser::IParser;
-  unique_ptr<IBuilder, Destroy<IBuilder> > builder{createInferBuilder(gLogger)};
+  unique_ptr<IBuilder> builder{createInferBuilder(gLogger)};
   builder->setMaxBatchSize(kBatchSize_);
-  IBuilderConfig *config = builder->createBuilderConfig();
+  unique_ptr<IBuilderConfig> config{builder->createBuilderConfig()};
   const auto explicitBatch = 1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
-  unique_ptr<INetworkDefinition, Destroy<INetworkDefinition> > network{builder->createNetworkV2(explicitBatch)};
-  unique_ptr<IParser, Destroy<IParser> > parser{nvonnxparser::createParser(*network, gLogger)};
+  unique_ptr<INetworkDefinition> network{builder->createNetworkV2(explicitBatch)};
+  unique_ptr<IParser> parser{nvonnxparser::createParser(*network, gLogger)};
 
   if (!parser->parseFromFile(kOnnxPath.c_str(), static_cast<int>(ILogger::Severity::kINFO))) {
     throw "ERROR: could not parse input engine.";
   }
 
   // FIXME: is this always correct?
-  const size_t kBatchSize = network->getInput(0)->getDimensions().d[0];
+  const int32_t kBatchSize = network->getInput(0)->getDimensions().d[0];
 
   if (kAddResize) {
     add_resize(network.get(), kBatchSize);
@@ -63,7 +63,9 @@ nvinfer1::ICudaEngine* OnnxInferenceServer::CreateCudaEngine(
     config->setFlag(BuilderFlag::kFP16);
   }
 
-  return builder->buildEngineWithConfig(*network, *config);
+  unique_ptr<IHostMemory> serializedModel{builder->buildSerializedNetwork(*network, *config)};
+  unique_ptr<IRuntime> runtime{createInferRuntime(gLogger)};
+  return runtime->deserializeCudaEngine(serializedModel->data(), serializedModel->size());
 }
 
 nvinfer1::ICudaEngine* OnnxInferenceServer::GetCudaEngine(const std::string& kEnginePath) {
@@ -74,8 +76,8 @@ nvinfer1::ICudaEngine* OnnxInferenceServer::GetCudaEngine(const std::string& kEn
   string buffer = readBuffer(kEnginePath);
   if (buffer.size()) {
     // Try to deserialize engine.
-    unique_ptr<IRuntime, Destroy<IRuntime>> runtime{createInferRuntime(gLogger)};
-    engine = runtime->deserializeCudaEngine(buffer.data(), buffer.size(), nullptr);
+    unique_ptr<IRuntime> runtime{createInferRuntime(gLogger)};
+    engine = runtime->deserializeCudaEngine(buffer.data(), buffer.size());
   }
 
   if (!engine) {
@@ -117,7 +119,7 @@ OnnxInferenceServer::OnnxInferenceServer(
                        calibrator,
                        kDoINT8, kAddResize));
   // Cache engine
-  std::unique_ptr<nvinfer1::IHostMemory, nvinfer1::Destroy<nvinfer1::IHostMemory>> engine_plan{engine->serialize()};
+  std::unique_ptr<nvinfer1::IHostMemory> engine_plan{engine->serialize()};
   nvinfer1::writeBuffer(engine_plan->data(), engine_plan->size(), kCachePath);
 
   LoadAndLaunch();
@@ -146,7 +148,7 @@ OnnxInferenceServer::OnnxInferenceServer(
                        calibrator,
                        kDoINT8, kAddResize));
   // Cache engine
-  std::unique_ptr<nvinfer1::IHostMemory, nvinfer1::Destroy<nvinfer1::IHostMemory>> engine_plan{engine->serialize()};
+  std::unique_ptr<nvinfer1::IHostMemory> engine_plan{engine->serialize()};
   nvinfer1::writeBuffer(engine_plan->data(), engine_plan->size(), kCachePath);
 
   LoadAndLaunch();

@@ -29,7 +29,7 @@ class VideoDecoder {
   AVFormatContext *fmt_ctx_ = NULL;
   AVCodecContext *video_dec_ctx_ = NULL;
   AVFrame *frame_ = NULL;
-  AVPacket pkt_;
+  AVPacket *pkt_;
 
   LoaderCondition kCondition_;
   enum AVPixelFormat in_pix_fmt_;

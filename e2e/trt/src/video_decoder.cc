@@ -12,6 +12,7 @@ extern "C" {
 #include "libavfilter/avfilter.h"
 #include "libavfilter/buffersrc.h"
 #include "libavfilter/buffersink.h"
+#include "libavcodec/avcodec.h"
 }
 
 #include "video_decoder.h"
@@ -20,7 +21,7 @@ static int open_codec_context(int *stream_idx, AVCodecContext **dec_ctx,
     AVFormatContext *fmt_ctx, enum AVMediaType type) {
   int ret, stream_index;
   AVStream *st;
-  AVCodec *dec = NULL;
+  const AVCodec *dec = NULL;
   AVDictionary *opts = NULL;
 
   ret = av_find_best_stream(fmt_ctx, type, -1, -1, NULL, 0);
@@ -85,9 +86,7 @@ VideoDecoder::VideoDecoder(
   if (!frame_)
     throw std::runtime_error("Couldn't allocate frame");
 
-  av_init_packet(&pkt_);
-  pkt_.data = NULL;
-  pkt_.size = 0;
+  pkt_ = av_packet_alloc();
 
   // FIXME
   // Set up swscale
@@ -116,18 +115,18 @@ VideoDecoder::~VideoDecoder() {
   av_freep(&frame_->data[0]);
   av_frame_free(&frame_);
 
-  av_free_packet(&pkt_);
+  av_packet_free(&pkt_);
   sws_freeContext(sws_ctx_);
 }
 
 
 int VideoDecoder::DecodePacket(int *got_frame, int cached) {
   int ret = 0;
-  int decoded = pkt_.size;
+  int decoded = pkt_->size;
 
   *got_frame = 0;
-  if (pkt_.stream_index == video_stream_idx_) {
-    ret = avcodec_decode_video2(video_dec_ctx_, frame_, got_frame, &pkt_);
+  if (pkt_->stream_index == video_stream_idx_) {
+    ret = avcodec_decode_video2(video_dec_ctx_, frame_, got_frame, pkt_);
     if (ret < 0)
       throw std::runtime_error("Error decoding frame");
 
@@ -210,8 +209,8 @@ void VideoDecoder::DecodeAll(uint8_t *output) {
     return_frames[i] = cv::Mat(3, sizes, CV_8UC1, data);
   }
 
-  while (av_read_frame(fmt_ctx_, &pkt_) >= 0) {
-    AVPacket orig_pkt = pkt_;
+  while (av_read_frame(fmt_ctx_, pkt_) >= 0) {
+    AVPacket *orig_pkt = av_packet_clone(pkt_);
     do {
       const int ret = DecodePacket(&got_frame, 0);
       if (got_frame) {
@@ -221,14 +220,14 @@ void VideoDecoder::DecodeAll(uint8_t *output) {
       }
       if (ret < 0)
         break;
-      pkt_.data += ret;
-      pkt_.size -= ret;
-    } while (pkt_.size > 0);
-    av_packet_unref(&orig_pkt);
+      pkt_->data += ret;
+      pkt_->size -= ret;
+    } while (pkt_->size > 0);
+    av_packet_unref(orig_pkt);
   }
 
-  pkt_.data = NULL;
-  pkt_.size = 0;
+  pkt_->data = NULL;
+  pkt_->size = 0;
   do {
     DecodePacket(&got_frame, 1);
     if (got_frame) {

@@ -37,9 +37,9 @@ class OnnxInferenceServer : public InferenceServer {
   const bool kDoMemcpy_;
 
   nvinfer1::Logger gLogger;
-  std::unique_ptr<nvinfer1::ICudaEngine, nvinfer1::Destroy<nvinfer1::ICudaEngine> > engine{nullptr};
+  std::unique_ptr<nvinfer1::ICudaEngine> engine{nullptr};
   // std::unique_ptr<nvinfer1::IExecutionContext, nvinfer1::Destroy<nvinfer1::IExecutionContext>> context{nullptr};
-  std::vector<std::unique_ptr<nvinfer1::IExecutionContext, nvinfer1::Destroy<nvinfer1::IExecutionContext> > > contexts;
+  std::vector<std::unique_ptr<nvinfer1::IExecutionContext> > contexts;
   void *bindings[kNbStreams_][2];
   cudawrapper::CudaStream streams[kNbStreams_];
 

@@ -40,14 +40,14 @@ class BaseCalibrator : public nvinfer1::IInt8EntropyCalibrator2 {
     cudaFree(device_ptr_);
   }
 
-  int getBatchSize() const override {
+  int getBatchSize() const noexcept override {
     return 1;  // FIXME: ONNX hack, fix once TensorRT fixes the bug
   }
 
   virtual void fillInpData() = 0;
   virtual size_t getSize() = 0;
 
-  bool getBatch(void* bindings[], const char* names[], int nbBindings) override {
+  bool getBatch(void* bindings[], const char* names[], int nbBindings) noexcept override {
     if (counter_ / kBatchSize_ > 500 || counter_ + kBatchSize_ > getSize()) {
       counter_ = 0;
       return false;
@@ -63,7 +63,7 @@ class BaseCalibrator : public nvinfer1::IInt8EntropyCalibrator2 {
     return true;
   }
 
-  const void* readCalibrationCache(size_t& length) override {
+  const void* readCalibrationCache(size_t& length) noexcept override {
     calibration_cache_.clear();
     std::ifstream input(calibrationTableName(), std::ios::binary);
     input >> std::noskipws;
@@ -76,7 +76,7 @@ class BaseCalibrator : public nvinfer1::IInt8EntropyCalibrator2 {
     return length ? &calibration_cache_[0] : nullptr;
   }
 
-  void writeCalibrationCache(const void* cache, size_t length) override {
+  void writeCalibrationCache(const void* cache, size_t length) noexcept override {
     std::ofstream output(calibrationTableName(), std::ios::binary);
     output.write(reinterpret_cast<const char*>(cache), length);
   }
