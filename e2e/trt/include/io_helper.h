@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& o, const ILogger::Severity severity);
 class Logger : public nvinfer1::ILogger
 {
 public:
-    virtual void log(Severity severity, const char* msg) override
+    virtual void log(Severity severity, const char* msg) noexcept override
     {
         std::cerr << severity << ": " << msg << std::endl;
     }

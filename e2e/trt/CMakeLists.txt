@@ -22,9 +22,10 @@ find_library(POSTPROC_LIB NAMES postproc HINTS /lfs/1/ddkang/local/lib)
 find_library(SWSCALE_LIB NAMES swscale HINTS /lfs/1/ddkang/local/lib)
 find_library(SWRESAMPLE_LIB NAMES swresample HINTS /lfs/1/ddkang/local/lib)
 ## Folly
-include(cmake/FindFolly.cmake)
+find_package(folly REQUIRED)
 include(cmake/FindGlog.cmake)
 include(cmake/FindDoubleConversion.cmake)
+find_package(fmt REQUIRED)
 ## TensorRT
 include(cmake/FindTensorRT.cmake)
 ## ONNX
@@ -38,14 +39,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DONNX_ML=1 -O3")
 set(ALL_LIBS
   ${OpenCV_LIBS} ${JPEG_LIBRARIES} ${CUDA_LIBRARIES}
   ${ZLIB_LIBRARIES} ${LIBLZMA_LIBRARIES}
-  ${YAML_CPP_LIBRARIES}
+  yaml-cpp
   ${AVUTIL_LIB} ${AVFILTER_LIB} ${AVFORMAT_LIB} ${AVCODEC_LIB} ${AVDEVICE_LIB}
   ${POSTPROC_LIB} ${SWSCALE_LIB} ${SWRESAMPLE_LIB}
-  ${Protobuf_LIBRARIES} ${FOLLY_LIBRARIES} ${GLOG_LIBRARIES}
-  ${DOUBLE_CONVERSION_LIBRARY}
+  ${Protobuf_LIBRARIES} folly fmt
+  ${GLOG_LIBRARIES} ${DOUBLE_CONVERSION_LIBRARY}
   ${ONNX_LIB} ${ONNX_PROTO_LIB}
   ${NVINFER_LIB} ${NVONNX_LIB}
-  "stdc++fs" "x264")
+  "stdc++fs")
 
 
 
@@ -56,7 +57,7 @@ file(GLOB SOURCES "src/*.cc")
 # This _must_ be STATIC due to CUDA fuckery
 add_library(trt_common STATIC ${SOURCES})
 target_link_libraries(trt_common PUBLIC OpenMP::OpenMP_CXX)
-target_include_directories(trt_common PUBLIC /usr/local/include/opencv4)
+target_include_directories(trt_common PUBLIC ${OpenCV_INCLUDE_DIRS} ${JPEG_INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS})
 
 add_executable(runner runner.cc)
 target_link_libraries(runner PUBLIC OpenMP::OpenMP_CXX trt_common ${ALL_LIBS})
