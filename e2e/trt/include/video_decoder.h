@@ -38,7 +38,6 @@ class VideoDecoder {
   // The following should be const
   size_t kNbFrames_;
   int kInWidth_, kInHeight_;
-  int refcount = 0;
 
 
   // Output data
@@ -60,8 +59,8 @@ class VideoDecoder {
   ~VideoDecoder();
   void InitLookup();
 
-  int DecodePacket(int *got_frame, int cached);
   void ProcessFrame(cv::Mat *converted);
+  void DecodePacket(AVPacket *pkt, std::vector<cv::Mat> &return_frames);
   void DecodeAll(uint8_t *output);
 };
 

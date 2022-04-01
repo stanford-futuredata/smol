@@ -44,9 +44,7 @@ static int open_codec_context(int *stream_idx, AVCodecContext **dec_ctx,
   if ((ret = avcodec_parameters_to_context(*dec_ctx, st->codecpar)) < 0)
     throw std::runtime_error("Failed to copy codec paramaeters to decoder context");
 
-  /* Init the decoders, with or without reference counting */
-  int refcount = 0; // TODO: figure out wtf this is
-  av_dict_set(&opts, "refcounted_frames", refcount ? "1" : "0", 0);
+  /* Init the decoders */
   if ((ret = avcodec_open2(*dec_ctx, dec, &opts)) < 0)
     throw std::runtime_error("Failed to open codec");
   *stream_idx = stream_index;
@@ -120,29 +118,6 @@ VideoDecoder::~VideoDecoder() {
 }
 
 
-int VideoDecoder::DecodePacket(int *got_frame, int cached) {
-  int ret = 0;
-  int decoded = pkt_->size;
-
-  *got_frame = 0;
-  if (pkt_->stream_index == video_stream_idx_) {
-    ret = avcodec_decode_video2(video_dec_ctx_, frame_, got_frame, pkt_);
-    if (ret < 0)
-      throw std::runtime_error("Error decoding frame");
-
-    if (*got_frame) {
-      if (frame_->width != kInWidth_ || frame_->height != kInHeight_ || frame_->format != in_pix_fmt_)
-        throw std::runtime_error("Frame {width,height,pix_fmt} changed");
-      video_frame_count_++;
-    }
-  }
-
-  if (*got_frame && refcount)
-    av_frame_unref(frame_);
-  return decoded;
-}
-
-
 // FIXME: Optimized vs not?
 void VideoDecoder::ProcessFrame(cv::Mat *converted) {
   if (kCondition_ == LoaderCondition::DecodeOnly)
@@ -193,6 +168,25 @@ void VideoDecoder::ProcessFrame(cv::Mat *converted) {
     return;
 }
 
+void VideoDecoder::DecodePacket(AVPacket *pkt, std::vector<cv::Mat> &return_frames) {
+  int ret = avcodec_send_packet(video_dec_ctx_, pkt);
+  if (ret < 0)
+    throw std::runtime_error("Error decoding frame");
+
+  while (ret >= 0) {
+    ret = avcodec_receive_frame(video_dec_ctx_, frame_);
+    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+      break;
+    if (ret < 0)
+      throw std::runtime_error("Error decoding frame");
+    if (frame_->width != kInWidth_ || frame_->height != kInHeight_ || frame_->format != in_pix_fmt_)
+      throw std::runtime_error("Frame {width,height,pix_fmt} changed");
+    if (video_frame_count_ < return_frames.size())
+      ProcessFrame(&return_frames[video_frame_count_]);
+    video_frame_count_++;
+    av_frame_unref(frame_);
+  }
+}
 
 void VideoDecoder::DecodeAll(uint8_t *output) {
   std::vector<cv::Mat> return_frames(kNbFrames_);
@@ -210,29 +204,10 @@ void VideoDecoder::DecodeAll(uint8_t *output) {
   }
 
   while (av_read_frame(fmt_ctx_, pkt_) >= 0) {
-    AVPacket *orig_pkt = av_packet_clone(pkt_);
-    do {
-      const int ret = DecodePacket(&got_frame, 0);
-      if (got_frame) {
-        // video_frame_count is incremented before this
-        if (video_frame_count_ - 1 < return_frames.size())
-          ProcessFrame(&return_frames[video_frame_count_ - 1]);
-      }
-      if (ret < 0)
-        break;
-      pkt_->data += ret;
-      pkt_->size -= ret;
-    } while (pkt_->size > 0);
-    av_packet_unref(orig_pkt);
-  }
-
-  pkt_->data = NULL;
-  pkt_->size = 0;
-  do {
-    DecodePacket(&got_frame, 1);
-    if (got_frame) {
-      if (video_frame_count_ - 1 < return_frames.size())
-        ProcessFrame(&return_frames[video_frame_count_ - 1]);
+    if (pkt_->stream_index == video_stream_idx_) {
+      DecodePacket(pkt_, return_frames);
     }
-  } while (got_frame);
+    av_packet_unref(pkt_);
+  }
+  DecodePacket(NULL, return_frames);
 }
