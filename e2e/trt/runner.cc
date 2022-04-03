@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
     float time;
     std::vector<float> output;
     if (kTimeLoad) {
-      throw std::runtime_error("Loading not implemented");
+      // throw std::runtime_error("Loading not implemented");
       time = server.TimeEndToEnd(paths);
       std::cerr << "Runtime: " << time << std::endl;
     } else {

@@ -21,7 +21,8 @@ CompressedImage DataLoader::LoadCompressedImageFromFile(const std::string& kFile
   file.seekg(0, std::ios::beg);
 
   uint8_t *ret = (uint8_t *) malloc(file_size);
-  std::copy(std::istream_iterator<uint8_t>(file), std::istream_iterator<uint8_t>(), ret);
+  // std::copy(std::istream_iterator<uint8_t>(file), std::istream_iterator<uint8_t>(), ret);
+  file.read((char *)ret, file_size);
   return std::make_pair(ret, file_size);
 }
 
