@@ -12,10 +12,10 @@ std::vector<float> ExperimentServer::RunInferenceOnFiles(const std::vector<std::
   output.reserve(kFileNames.size() * kOutputSingle_);
   batch.reserve(kBatchSize_ * kImSize_);
 
-  #pragma omp parallel for
+  /*#pragma omp parallel for
   for (size_t i = 0; i < kFileNames.size(); i++) {
     kLoader_.LoadAndPreproc(kFileNames[i], batch.data());
-  }
+  }*/
 
   /*for (size_t i = 0; i < kFileNames.size(); i += kBatchSize_) {
     #pragma omp parallel for
@@ -49,9 +49,11 @@ std::vector<float> ExperimentServer::RunInferenceOnFiles(const std::vector<std::
             batch.get()->data() + j * kImSize_);
       }
     }
+    const size_t kOutputSize =
+        std::min(kFileNames.size() - i, kBatchSize_) * kOutputSingle_;
     kInfer_->RunInference(
         std::make_tuple(std::move(batch), kBatchSize_,
-                        output.data() + i * kOutputSingle_, kBatchSize_ * kOutputSingle_,
+                        output.data() + i * kOutputSingle_, kOutputSize,
                         &batch_queue_));
   }
 
@@ -63,8 +65,8 @@ float ExperimentServer::TimeEndToEnd(const std::vector<std::string>& kFileNames)
   auto start = std::chrono::high_resolution_clock::now();
   RunInferenceOnFiles(kFileNames);
   auto end = std::chrono::high_resolution_clock::now();
-  auto diff = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-  return diff.count();
+  std::chrono::duration<double, std::milli> diff = end - start;
+  return diff.count() / 1000.0;
 }
 
 void ExperimentServer::RunInferenceOnCompressed(
