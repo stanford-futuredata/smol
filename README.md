@@ -14,7 +14,7 @@ Code release for [Jointly Optimizing Preprocessing and Inference for DNN-based V
 
 ## Setup 
 Start with a `g4dn.xlarge` AWS instance, using the following AMI: 
-`Ubuntu Server 18.04 LTS (HVM), SSD Volume Type`
+`Ubuntu Server 20.04 LTS (HVM), SSD Volume Type`
 
 Set the SSD memory to be around 100GB (you can adjust this based on your specific needs). 
 
@@ -60,9 +60,8 @@ You will need to supervise this install. You can avoid this step by manually ins
 ```sh
 sudo apt install yasm
 
-git clone https://github.com/FFmpeg/FFmpeg.git
-cd FFmpeg
-git checkout 4c07985
+wget https://ffmpeg.org/releases/ffmpeg-5.0.tar.xz
+tar xf ffmpeg-5.0.tar.xz; cd ffmpeg-5.0
 mkdir build; cd build
 ../configure --enable-gpl --enable-postproc --enable-pic --enable-shared
 make -j$(nproc)
@@ -134,7 +133,7 @@ sudo apt-get install \
 
 git clone https://github.com/facebook/folly.git
 cd folly
-git checkout efaea2394de97a4cbcc6e504ae8eb315a4e4aed4
+git checkout 530a7266f9f15eaad196ce1b291fbbfc8e578810
 mkdir _build && cd _build
 cmake ..
 make -j$(nproc)
@@ -175,12 +174,12 @@ sudo make install -j$(nproc)
 
 #### libjpeg-turbo
 Download the following file:
-https://sourceforge.net/projects/libjpeg-turbo/files/2.0.3/libjpeg-turbo-official_2.0.3_amd64.deb/download
+https://sourceforge.net/projects/libjpeg-turbo/files/2.1.3/libjpeg-turbo-official_2.1.3_amd64.deb/download
 
 SCP the deb file to the remote machine.
 
 ```sh
-sudo dpkg -i libjpeg-turbo-official_2.0.3_amd64.deb
+sudo dpkg -i libjpeg-turbo-official_2.1.3_amd64.deb
 sudo apt-get install -f
 ```
 Add the following to your .bashrc
@@ -193,7 +192,7 @@ export CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:/opt/libjpeg-turbo/include/
 ### Cloning the code
 Clone and build the repository:
 ```sh
-git clone https://github.com/stanford-futuredata/image-serving.git
+git clone https://github.com/stanford-futuredata/smol.git
 cd e2e/trt
 mkdir build ; cd build
 cmake ..
